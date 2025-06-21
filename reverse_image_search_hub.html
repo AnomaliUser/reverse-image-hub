@@ -1,0 +1,106 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>🔍 Anime & Global Reverse Image Search</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; padding: 20px; background: #111; color: #eee; }
+    input, button { margin: 10px; padding: 10px; font-size: 16px; }
+    button { cursor: pointer; }
+    #loading { display: none; color: lime; margin-top: 15px; }
+    .links { margin-top: 20px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+    .links a { background: #222; padding: 8px 14px; border-radius: 6px; text-decoration: none; color: #fff; }
+    .nsfw-toggle { margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>🔍 Reverse Image Search Hub</h1>
+  <p>Uploader une image pour la rechercher sur plusieurs moteurs (anime + généralistes + réseaux sociaux)</p>
+  <input type="file" id="imageInput" accept="image/*" />
+  <div class="nsfw-toggle">
+    <label><input type="checkbox" id="nsfwCheck" /> Inclure les moteurs NSFW</label>
+  </div>
+  <button onclick="handleUpload()">Lancer la recherche</button>
+  <p id="loading">⏳ Upload en cours sur Catbox...</p>
+  <div class="links" id="results"></div>
+
+<script>
+async function handleUpload() {
+  const fileInput = document.getElementById('imageInput');
+  const nsfw = document.getElementById('nsfwCheck').checked;
+  const loading = document.getElementById('loading');
+  const results = document.getElementById('results');
+  results.innerHTML = '';
+
+  if (!fileInput.files.length) {
+    alert("Veuillez choisir une image.");
+    return;
+  }
+
+  const file = fileInput.files[0];
+  const formData = new FormData();
+  formData.append("reqtype", "fileupload");
+  formData.append("fileToUpload", file);
+
+  loading.style.display = "block";
+
+  try {
+    const res = await fetch("https://catbox.moe/user/api.php", {
+      method: "POST",
+      body: formData
+    });
+    const imageUrl = await res.text();
+    const encoded = encodeURIComponent(imageUrl.trim());
+
+    const engines = [
+      { name: "SauceNAO", url: `https://saucenao.com/search.php?url=${encoded}` },
+      { name: "trace.moe", url: `https://trace.moe/?url=${encoded}` },
+      { name: "IQDB", url: `https://iqdb.org/?url=${encoded}` },
+      { name: "ascii2d", url: `https://ascii2d.net/search/url/${encoded}` },
+      { name: "Google", url: `https://lens.google.com/uploadbyurl?url=${encoded}` },
+      { name: "Bing", url: `https://www.bing.com/images/search?q=imgurl:${encoded}&view=detailv2` },
+      { name: "Yandex", url: `https://yandex.com/images/search?rpt=imageview&url=${encoded}` },
+      { name: "TinEye", url: `https://tineye.com/search/?url=${encoded}` },
+      { name: "Baidu", url: `https://graph.baidu.com/flip?center=${encoded}` },
+      { name: "RevEye", url: `https://www.google.com/searchbyimage?&image_url=${encoded}` },
+      { name: "Danbooru", url: `https://danbooru.donmai.us/posts?tags=source:${encoded}` },
+      { name: "Konachan", url: `https://konachan.com/post?tags=source:${encoded}` },
+      { name: "Gelbooru", url: `https://gelbooru.com/index.php?page=post&s=list&tags=source:${encoded}` },
+      { name: "Sankaku", url: `https://chan.sankakucomplex.com/?tags=source:${encoded}` },
+      { name: "Yande.re", url: `https://yande.re/post?tags=source:${encoded}` },
+      { name: "Zerochan", url: `https://www.zerochan.net/search?key=${encoded}` },
+      { name: "AnimePictures", url: `https://anime-pictures.net/pictures/view_posts/0?search_tag=${encoded}` },
+      { name: "E-shuushuu", url: `https://e-shuushuu.net/search/results/?image_url=${encoded}` }
+    ];
+
+    const social = [
+      { name: "Twitter", url: `https://twitter.com/search?q=${encoded}` },
+      { name: "Instagram", url: `https://www.instagram.com/explore/tags/${encoded}/` },
+      { name: "Facebook", url: `https://www.facebook.com/search/top?q=${encoded}` },
+      { name: "Reddit", url: `https://www.reddit.com/search/?q=${encoded}` },
+      { name: "Tumblr", url: `https://www.tumblr.com/search/${encoded}` },
+      { name: "Pixiv", url: `https://www.pixiv.net/en/artworks/${encoded}` },
+      { name: "Fanbox", url: `https://fanbox.cc/search/posts?q=${encoded}` },
+      { name: "Patreon", url: `https://www.patreon.com/search?q=${encoded}` },
+      { name: "Telegram", url: `https://t.me/${encoded}` },
+      { name: "Discord", url: `https://discord.com` }
+    ];
+
+    [...engines, ...(nsfw ? social : [])].forEach(entry => {
+      const link = document.createElement('a');
+      link.href = entry.url;
+      link.textContent = entry.name;
+      link.target = '_blank';
+      results.appendChild(link);
+    });
+
+  } catch (err) {
+    alert("Erreur pendant l'upload ou la génération des liens.");
+  } finally {
+    loading.style.display = "none";
+  }
+}
+</script>
+</body>
+</html>
